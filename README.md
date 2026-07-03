@@ -79,8 +79,8 @@ Sprint boyunca Miro üzerinde 4 sütunlu bir board kullanılmıştır: **Backlog
 
 Sprint 1 başında, takım süreç kurulumuyla ilgili task'lar (GitHub reposu, README, backlog'un işlenmesi, board kurulumu, Daily Scrum rutini, rol netleştirme) doğrudan **In Progress**'e alınmıştır çünkü bu işler sprint başlar başlamaz devreye girmiştir.
 
-![Sprint Board 1](./images/sprint-board-1.png)
-![Sprint Board 2](./images/sprint-board-2.png)
+![Sprint Board 1](sprint-board-1.png)
+![Sprint Board 2](sprint-board-2.png)
 
 ## Ürün Durumu
 
