@@ -1,6 +1,6 @@
 # OrkestrAI
 
-## Takım Elemanları
+## Takım Üyeleri
 
 | İsim | Rol |
 |---|---|
