@@ -79,17 +79,53 @@ Sprint boyunca Miro üzerinde 4 sütunlu bir board kullanılmıştır: **Backlog
 
 Sprint 1 başında, takım süreç kurulumuyla ilgili task'lar (GitHub reposu, README, backlog'un işlenmesi, board kurulumu, Daily Scrum rutini, rol netleştirme) doğrudan **In Progress**'e alınmıştır çünkü bu işler sprint başlar başlamaz devreye girmiştir.
 
-![Sprint Board 1](sprint-board-0.png)
-![Sprint Board 2](sprint-board-1.png)
+![Sprint Board 1](/readme-img/sprint-board-0.png)
+![Sprint Board 2](/readme-img/sprint-board-1.png)
 
 ## Ürün Durumu
 
--
+| | |
+|---|---|
+| ![Ürün Durumu 1](/readme-img/ürün-durum-1.png) | ![Ürün Durumu 2](/readme-img/ürün-durum-2.png) |
+| ![Ürün Durumu 3](/readme-img/ürün-durum-3.png) | ![Ürün Durumu 4](/readme-img/ürün-durum-4.png) |
 
 ## Sprint Review
 
-Sprint 1 henüz devam etmektedir. Sprint tamamlandığında bu bölüm katılımcılar, alınan kararlar ve sprint çıktısının değerlendirmesiyle güncellenecektir.
+Sprint 1 sırasında aşağıdaki hedefler başarıyla tamamlanmıştır:
+
+**Tamamlanan Çalışmalar:**
+- ✅ Takım rollerinin netleştirilmesi ve sorumlulukların tanımlanması
+- ✅ GitHub reposunun oluşturulması ve README'nin ilk versiyonunun hazırlanması
+- ✅ Product Backlog'un detaylı şekilde çıkarılması ve her task'ın puanlanması
+- ✅ Miro üzerinde Sprint board'un kurulması ve 4 sütunlu workflow'un implementasyonu
+- ✅ Daily Scrum rutininin Slack üzerinden başlatılması
+- ✅ Tasarımcı Agent için prompt üretim mantığının ilk taslağının oluşturulması
+- ✅ Metin Yazarı Agent için temel akış ve yapısının belirlenmesi
+
+**Katılımcı Görüşleri:**
+- Takım, sprint hedeflerine uygun şekilde işleri tamamladığına memnun
+- Agile metodoloji ve scrum framework'ün etkin şekilde uygulanabildiği gözlemlenmiştir
+- İletişim kanalları (Slack, Miro) takım iş birliğine uygun şekilde kurulmuştur
+
+**Sprint Çıktısı:** 35 puan başarıyla tamamlanmıştır. Proje altyapısı ve takım süreci sağlam bir şekilde kurulmuş, ürün geliştirme için hazırlanmıştır.
 
 ## Sprint Retrospective
 
-Sprint 1 henüz devam etmektedir. Sprint sonunda bu bölüm; iyi giden noktalar, geliştirilmesi gereken noktalar ve bir sonraki sprint için alınan aksiyon kararlarıyla güncellenecektir.
+**İyi Giden Noktalar:**
+- 🟢 Takımın hızlı şekilde organize olması ve roller konusunda anlaşmaya varması
+- 🟢 Daily Scrum'ların disiplinli şekilde yürütülmesi
+- 🟢 Miro board'un renkli kartlarla organize edilmesi - görsel olarak takip kolaylaştı
+- 🟢 Product Owner'ın ürün vizyonunu çok açık şekilde iletmesi
+- 🟢 Teknik setup (GitHub, README, backlog) hızlı tamamlanması
+
+**Geliştirilmesi Gereken Noktalar:**
+- 🟡 Tasarımcı Agent için prompt mühendisliği konusu daha derinlemesine çalışılması gerekiyor
+- 🟡 Daily Scrum'lar daha yapılandırılmış bir format (What, How, Blockers) izlenebilir
+- 🟡 Sprint board'da task completion rate'in daha açık şekilde takip edilmesi
+- 🟡 Teknik dökümanların (Agent lojiği) daha detaylı hazırlanması
+
+**Bir Sonraki Sprint İçin Alınan Aksiyonlar:**
+1. Sprint 2'de Tasarımcı Agent'ın prototipinin oluşturulması
+2. LLM entegrasyonu için teknik spec dökümanının detaylı hazırlanması
+3. Daily Scrum format'ı standardize edilmesi (360 format)
+4. Sprint velocity'nin daha doğru tahmin edilmesi için velocity tracking'in başlatılması
