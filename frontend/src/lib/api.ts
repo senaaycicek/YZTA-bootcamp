@@ -54,6 +54,35 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function requestBlob(path: string, options: RequestInit = {}): Promise<Blob> {
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  }
+  const token = tokenStore.get()
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...options, headers })
+  } catch {
+    throw new ApiError(0, 'Sunucuya ulaşılamıyor. Backend çalışıyor mu?')
+  }
+
+  if (!res.ok) {
+    let detail = 'Beklenmeyen bir hata oluştu.'
+    try {
+      const body = await res.json()
+      if (typeof body.detail === 'string') detail = body.detail
+    } catch {
+      detail = await res.text()
+    }
+    if (res.status === 401) tokenStore.clear()
+    throw new ApiError(res.status, detail)
+  }
+
+  return res.blob()
+}
+
 // ---------- Auth ----------
 export const api = {
   register: (email: string, password: string) =>
@@ -74,6 +103,8 @@ export const api = {
   listProducts: () => request<Product[]>('/api/products'),
 
   getProduct: (id: number) => request<Product>(`/api/products/${id}`),
+
+  getProductImage: (id: number) => requestBlob(`/api/products/${id}/image`),
 
   createProduct: (input: ProductInput) =>
     request<Product>('/api/products', {

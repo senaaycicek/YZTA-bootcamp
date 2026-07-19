@@ -34,6 +34,8 @@ export default function ProductResult() {
   const [product, setProduct] = useState<Product | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [regenerating, setRegenerating] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageLoading, setImageLoading] = useState(false)
 
   useEffect(() => {
     api
@@ -42,6 +44,28 @@ export default function ProductResult() {
       .catch((err) => setError(err.message))
   }, [id])
 
+  useEffect(() => {
+    if (!product) return
+
+    let revoked = false
+    let currentUrl: string | null = null
+
+    setImageLoading(true)
+    api
+      .getProductImage(product.id)
+      .then((blob) => {
+        currentUrl = URL.createObjectURL(blob)
+        if (!revoked) setImageUrl(currentUrl)
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setImageLoading(false))
+
+    return () => {
+      revoked = true
+      if (currentUrl) URL.revokeObjectURL(currentUrl)
+    }
+  }, [product])
+
   async function regenerate() {
     if (!product) return
     setError(null)
@@ -49,6 +73,7 @@ export default function ProductResult() {
     try {
       const result = await api.generate(product.id)
       setProduct(result.product)
+      setImageUrl(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Üretim başarısız oldu.')
     } finally {
@@ -128,6 +153,37 @@ export default function ProductResult() {
 
       {hasResults && !regenerating && (
         <div className="mt-8 space-y-6">
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card-brutal mx-auto w-full max-w-2xl overflow-hidden"
+          >
+            <div className="flex items-center justify-between border-b-[3px] border-ink bg-ink px-5 py-3">
+              <h2 className="font-display font-bold uppercase tracking-widest text-lemon">
+                🖼️ Üretilen Görsel
+              </h2>
+            </div>
+            <div className="bg-white p-4 sm:p-5">
+              {imageLoading && !imageUrl ? (
+                <div className="flex min-h-[200px] items-center justify-center rounded-xl border-2 border-dashed border-ink/20 bg-ink/5">
+                  <BouncingBlocks label="Görsel yükleniyor" />
+                </div>
+              ) : imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={product.uretilen_baslik ?? product.kategori}
+                  className="mx-auto max-h-[320px] w-auto max-w-full rounded-xl border-2 border-ink object-contain shadow-[8px_8px_0_0_#111]"
+                />
+              ) : (
+                <div className="flex min-h-[200px] items-center justify-center rounded-xl border-2 border-dashed border-ink/20 bg-ink/5">
+                  <p className="font-medium text-ink/60">
+                    Görsel henüz hazırlanmadı.
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.section>
+
           {/* Görsel Prompt — code block */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}

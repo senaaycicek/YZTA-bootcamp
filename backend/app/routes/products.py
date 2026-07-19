@@ -1,7 +1,9 @@
 """Ürün endpoint'leri — tümü JWT ile korunur."""
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from ..agents.image_adapter import ImageGenerationError
 from ..agents.llm_client import LLMError
 from ..auth.dependencies import get_current_user
 from ..database import get_db
@@ -58,6 +60,11 @@ def generate(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"İçerik üretimi başarısız oldu: {exc}",
         ) from exc
+    except ImageGenerationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Görsel üretimi başarısız oldu: {exc}",
+        ) from exc
 
     return GenerateResult(
         product=ProductOut.model_validate(product),
@@ -66,3 +73,26 @@ def generate(
         aciklama=result["aciklama"],
         anahtar_kelimeler=result["anahtar_kelimeler"],
     )
+
+
+@router.get("/{product_id}/image")
+def product_image(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    product = product_service.get_product(db, current_user.id, product_id)
+    if product is None:
+        raise HTTPException(status_code=404, detail="Ürün bulunamadı.")
+
+    try:
+        image_path = product_service.ensure_product_image(product)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ImageGenerationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Görsel üretimi başarısız oldu: {exc}",
+        ) from exc
+
+    return FileResponse(image_path, media_type="image/png")

@@ -1,10 +1,11 @@
 """SQLAlchemy engine ve session yönetimi."""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from .config import settings
 
-database_url = settings.DATABASE_URL
+database_url = settings.DATABASE_URL.strip() or "sqlite:///./orkestrai.db"
 
 # Railway "postgres://" verebilir; SQLAlchemy "postgresql://" bekler
 if database_url.startswith("postgres://"):

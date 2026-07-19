@@ -1,4 +1,10 @@
 """API entegrasyon testleri: auth akışı ve ürün endpoint'leri."""
+
+from pathlib import Path
+
+from app.agents.image_adapter import ImageGenerationError
+from app.agents import llm_client
+from app.services import product_service
 from app.services import orchestrator
 from tests.conftest import SAMPLE_PRODUCT
 
@@ -70,7 +76,17 @@ def test_generate_saves_results(client, auth_headers, monkeypatch):
         "aciklama": "Uzun açıklama",
         "anahtar_kelimeler": ["kupa", "seramik", "kahve", "hediye", "minimalist"],
     }
+    fake_image_bytes = b"fake-png-bytes"
+
+    class FakeImageGenerator:
+        def generate(self, prompt):
+            return fake_image_bytes
+
     monkeypatch.setattr(orchestrator, "run_pipeline", lambda product: fake_result)
+    monkeypatch.setattr(product_service, "get_image_generator", lambda: FakeImageGenerator())
+
+    generated_images_dir = Path(product_service.__file__).resolve().parents[2] / "generated_images"
+    monkeypatch.setattr(product_service, "_GENERATED_IMAGES_DIR", generated_images_dir)
 
     res = client.post("/api/products", json=SAMPLE_PRODUCT, headers=auth_headers)
     product_id = res.json()["id"]
@@ -80,6 +96,15 @@ def test_generate_saves_results(client, auth_headers, monkeypatch):
     body = res.json()
     assert body["gorsel_prompt"] == fake_result["gorsel_prompt"]
     assert body["product"]["uretilen_baslik"] == "Şık Seramik Kupa"
+
+    image_path = generated_images_dir / f"product_{product_id}.png"
+    assert image_path.exists()
+    assert image_path.read_bytes() == fake_image_bytes
+
+    res = client.get(f"/api/products/{product_id}/image", headers=auth_headers)
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "image/png"
+    assert res.content == fake_image_bytes
 
     # Sonuçlar kalıcı olarak kaydedilmiş olmalı
     res = client.get(f"/api/products/{product_id}", headers=auth_headers)
@@ -100,3 +125,52 @@ def test_generate_llm_failure_returns_502(client, auth_headers, monkeypatch):
     res = client.post(f"/api/products/{product_id}/generate", headers=auth_headers)
     assert res.status_code == 502
     assert "İçerik üretimi başarısız" in res.json()["detail"]
+
+
+def test_generate_uses_fallback_copy_when_openai_unavailable(
+    client, auth_headers, monkeypatch
+):
+    monkeypatch.setattr(llm_client.settings, "OPENAI_API_KEY", "")
+    monkeypatch.setattr(llm_client.settings, "LLM_FALLBACK_ENABLED", True)
+    monkeypatch.setattr(llm_client, "_client", None)
+
+    res = client.post("/api/products", json=SAMPLE_PRODUCT, headers=auth_headers)
+    product_id = res.json()["id"]
+
+    res = client.post(f"/api/products/{product_id}/generate", headers=auth_headers)
+    assert res.status_code == 502
+    assert "Görsel üretimi başarısız" in res.json()["detail"]
+
+
+def test_product_image_returns_502_when_image_generation_fails(
+    client, auth_headers, monkeypatch, tmp_path
+):
+    fake_result = {
+        "gorsel_prompt": "a broken prompt",
+        "baslik": "Başlık",
+        "aciklama": "Açıklama",
+        "anahtar_kelimeler": ["kupa", "seramik", "kahve", "hediye", "minimalist"],
+    }
+
+    def failing_generate(prompt):
+        raise ImageGenerationError("Görsel üretilemedi.")
+
+    class FailingImageGenerator:
+        def generate(self, prompt):
+            return failing_generate(prompt)
+
+    monkeypatch.setattr(orchestrator, "run_pipeline", lambda product: fake_result)
+    monkeypatch.setattr(product_service, "get_image_generator", lambda: FailingImageGenerator())
+
+    generated_images_dir = tmp_path / "generated_images"
+    monkeypatch.setattr(product_service, "_GENERATED_IMAGES_DIR", generated_images_dir)
+
+    res = client.post("/api/products", json=SAMPLE_PRODUCT, headers=auth_headers)
+    product_id = res.json()["id"]
+
+    res = client.post(f"/api/products/{product_id}/generate", headers=auth_headers)
+    assert res.status_code == 502
+    assert "Görsel üretimi başarısız" in res.json()["detail"]
+
+    image_path = generated_images_dir / f"product_{product_id}.png"
+    assert not image_path.exists()

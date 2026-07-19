@@ -1,9 +1,10 @@
-"""designer_agent ve copywriter_agent birim testleri (LLM mock'lanır)."""
+"""designer_agent, copywriter_agent ve image_adapter birim testleri."""
+from base64 import b64encode
 import json
 
 import pytest
 
-from app.agents import copywriter_agent, designer_agent
+from app.agents import copywriter_agent, designer_agent, image_adapter
 from app.agents.llm_client import LLMError
 
 PRODUCT = {
@@ -17,21 +18,13 @@ PRODUCT = {
 
 
 def test_designer_agent_returns_prompt(monkeypatch):
-    captured = {}
-
-    def fake_chat(system_prompt, user_prompt, temperature=0.7):
-        captured["system"] = system_prompt
-        captured["user"] = user_prompt
-        return "A minimalist matte black ceramic coffee mug, studio lighting, 8k"
-
-    monkeypatch.setattr(designer_agent.llm_client, "chat", fake_chat)
-
     prompt = designer_agent.generate_image_prompt(PRODUCT)
 
-    assert "ceramic" in prompt
-    # Tüm ürün özellikleri LLM'e iletilmiş olmalı
-    assert "seramik" in captured["user"]
-    assert "genç profesyoneller" in captured["user"]
+    assert prompt.startswith("A professional e-commerce product photo of a mat siyah seramik kahve kupası")
+    assert "minimalist style" in prompt
+    assert "genç profesyoneller" in prompt
+    assert "softbox lighting" in prompt
+    assert prompt.endswith("professional product photography.")
 
 
 def test_copywriter_agent_parses_json(monkeypatch):
@@ -75,3 +68,62 @@ def test_copywriter_agent_missing_field_raises(monkeypatch):
 
     with pytest.raises(LLMError):
         copywriter_agent.generate_marketing_copy(PRODUCT, "prompt")
+
+
+def test_openai_image_generator_decodes_b64_payload(monkeypatch):
+    encoded = b64encode(image_adapter.PLACEHOLDER_PNG).decode("ascii")
+
+    class FakeImageData:
+        b64_json = encoded
+        url = None
+
+    class FakeResponse:
+        data = [FakeImageData()]
+
+    class FakeClient:
+        class images:
+            @staticmethod
+            def generate(**kwargs):
+                return FakeResponse()
+
+    monkeypatch.setattr(image_adapter, "_get_openai_client", lambda: FakeClient())
+
+    result = image_adapter.OpenAIImageGenerator().generate("prompt")
+
+    assert result == image_adapter.PLACEHOLDER_PNG
+
+
+def test_openai_image_generator_downloads_url_payload(monkeypatch):
+    class FakeImageData:
+        b64_json = None
+        url = "https://example.com/generated.png"
+
+    class FakeResponse:
+        data = [FakeImageData()]
+
+    class FakeClient:
+        class images:
+            @staticmethod
+            def generate(**kwargs):
+                return FakeResponse()
+
+    class FakeDownloadResponse:
+        content = b"downloaded-image-bytes"
+
+        def raise_for_status(self):
+            return None
+
+    monkeypatch.setattr(image_adapter, "_get_openai_client", lambda: FakeClient())
+    monkeypatch.setattr(image_adapter.httpx, "get", lambda url, timeout: FakeDownloadResponse())
+
+    result = image_adapter.OpenAIImageGenerator().generate("prompt")
+
+    assert result == b"downloaded-image-bytes"
+
+
+def test_get_image_generator_prefers_openai_when_key_exists(monkeypatch):
+    monkeypatch.setattr(image_adapter.settings, "OPENAI_API_KEY", "test-key")
+
+    generator = image_adapter.get_image_generator()
+
+    assert isinstance(generator, image_adapter.OpenAIImageGenerator)

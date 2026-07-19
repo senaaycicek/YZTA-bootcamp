@@ -1,9 +1,34 @@
 """Ürün iş mantığı — route katmanından ayrı tutulur."""
+from pathlib import Path
+
 from sqlalchemy.orm import Session
 
+from ..agents.image_adapter import PLACEHOLDER_PNG, get_image_generator
 from ..models import Product
 from ..schemas import ProductCreate
 from . import orchestrator
+
+_GENERATED_IMAGES_DIR = Path(__file__).resolve().parents[2] / "generated_images"
+
+
+def _image_path(product_id: int) -> Path:
+    return _GENERATED_IMAGES_DIR / f"product_{product_id}.png"
+
+
+def ensure_product_image(product: Product, force: bool = False) -> Path:
+    prompt = product.uretilen_gorsel_prompt
+    if not prompt:
+        raise ValueError("Bu ürün için görsel prompt henüz üretilmedi.")
+
+    image_path = _image_path(product.id)
+    if image_path.exists() and not force:
+        if image_path.read_bytes() != PLACEHOLDER_PNG:
+            return image_path
+
+    _GENERATED_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    image_bytes = get_image_generator().generate(prompt)
+    image_path.write_bytes(image_bytes)
+    return image_path
 
 
 def create_product(db: Session, user_id: int, payload: ProductCreate) -> Product:
@@ -49,5 +74,6 @@ def generate_for_product(db: Session, product: Product) -> dict:
     product.uretilen_anahtar_kelimeler = ", ".join(result["anahtar_kelimeler"])
     db.commit()
     db.refresh(product)
+    ensure_product_image(product, force=True)
 
     return result

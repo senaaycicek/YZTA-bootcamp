@@ -1,11 +1,24 @@
 """Uygulama yapılandırması — tüm ayarlar ortam değişkenlerinden okunur."""
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(_PROJECT_ROOT / ".env")
+load_dotenv(_PROJECT_ROOT / "backend" / ".env")
 
 
 class Settings:
     # OpenAI
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    LLM_FALLBACK_ENABLED: bool = os.getenv("LLM_FALLBACK_ENABLED", "1").lower() not in {
+        "0",
+        "false",
+        "no",
+    }
 
     # JWT
     JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
