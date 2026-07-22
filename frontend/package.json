@@ -11,13 +11,14 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0 --port $PORT"
+    "start": "serve --single --listen $PORT dist"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1"
+    "react-router-dom": "^7.18.1",
+    "serve": "^14.2.6"
   },
   "devDependencies": {
     "@types/node": "^24.13.2",
